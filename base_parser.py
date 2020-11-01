@@ -3,9 +3,26 @@ from math import pi
 import re
 
 class BaseParser:
+    """
+    Base class for all parsers.
 
+    A parser for a specific slicer should inherit this class.
+    For adding metadata the appropriate methods should be overridden,
+    however all methods are optional to implement. If unchanged,
+    a default value will be set, usually None.
+
+    This is only used as a temporary object, all values are stored
+    in a Metadata object which basically executes all get_* methods of
+    the parser class.
+    """
+
+    """Used by detect() on all lines to figure out if this is the right parser"""
     PATTERN_DETECT = re.compile("(?!)")  # Matches nothing
+
+    """Character that seperates keys from values"""
     DELIMITER = "="
+
+    """Name of the slicer used to generate the G-Code file"""
     SLICER = "Unknown"
     
     def __init__(self):
@@ -35,6 +52,7 @@ class BaseParser:
                 self.non_option_lines.append(l)
 
     def get_slicer(self):
+        """Name of the slicer used to generate the G-Code file"""
         return self.SLICER
     
     def get_time(self):

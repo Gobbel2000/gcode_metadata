@@ -1,0 +1,1 @@
+from metadata_manager import load_config

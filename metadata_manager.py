@@ -18,9 +18,14 @@ class MetadataManager:
         self.filament_manager = None
 
     def _handle_connect(self):
-        self.filament_manager = self.printer.lookup_object("filament_manager", None)
+        self.filament_manager = self.printer.lookup_object(
+                "filament_manager", None)
 
     def get_metadata(self, path):
+        """
+        This is the main method of the module that returns a metadata
+        object for the given gcode path.
+        """
         head, tail = self.filter_metadata_lines(path)
         parser = None
         for p in PARSERS:
@@ -28,6 +33,8 @@ class MetadataManager:
             if inst.detect(head, tail):
                 parser = inst
                 break
+        if parser is None:
+            raise ValueError("Couldn't find matching parser for %s" % path)
         parser.parse_options(head, tail)
         metadata = Metadata(parser)
         return metadata
@@ -87,11 +94,12 @@ class MetadataManager:
             tail.reverse()
         return head, tail
 
-def main():
+def load_config(config):
+    module = MetadataManager(config)
+    return module
+
+if __name__ == "__main__":
     path = sys.argv[1]
     mm = MetadataManager()
     md = mm.get_metadata(path)
-    print(md.__dict__)
-
-if __name__ == "__main__":
-    main()
+    print(md)
