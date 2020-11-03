@@ -76,7 +76,7 @@ class BaseParser:
         """
         diameter = self.get_diameter()
         if diameter is not None:
-            area = pi * diameter**2  # mm^2
+            area = pi * (diameter/2)**2  # mm^2
         else:
             area = None
         density = self.get_density()

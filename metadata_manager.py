@@ -3,9 +3,12 @@
 import sys
 
 from cura_marlin_parser import CuraMarlinParser
+from prusaslicer_parser import PrusaSlicerParser
 from metadata import Metadata
 
-PARSERS = [CuraMarlinParser]
+PARSERS = [CuraMarlinParser,
+           PrusaSlicerParser,
+]
 
 class MetadataManager:
 
