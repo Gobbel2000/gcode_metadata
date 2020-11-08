@@ -1,1 +1,1 @@
-from metadata_manager import load_config
+from gcode_metadata import load_config

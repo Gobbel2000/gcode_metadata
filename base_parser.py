@@ -25,20 +25,24 @@ class BaseParser:
     """Name of the slicer used to generate the G-Code file"""
     SLICER = "Unknown"
     
-    def __init__(self):
-        self.options = {}
-        self.non_option_lines = []
+    def __init__(self, head, tail):
+        self.options, self.non_option_lines = self._parse_options(head, tail)
 
-    def detect(self, head=[], tail=[]):
+    @classmethod
+    def _detect(cls, head=[], tail=[]):
         """
-        return True if this is the right parser for this file
+        return True if this is the right parser for this file.
+        This is implemented as a class method so the class doesn't have
+        to be instantiated to detect if it's the right parser.
         """
         for l in itertools.chain(head, tail):
-            if re.search(self.PATTERN_DETECT, l):
+            if re.search(cls.PATTERN_DETECT, l):
                 return True
         return False
     
-    def parse_options(self, head=[], tail=[]):
+    def _parse_options(self, head=[], tail=[]):
+        options = {}
+        non_option_lines = []
         for l in itertools.chain(head, tail):
             if self.DELIMITER in l:
                 key, value = l.split(self.DELIMITER, maxsplit=1)
@@ -47,9 +51,10 @@ class BaseParser:
                     value = eval(value, {}, {})
                 except (NameError, SyntaxError):
                     pass
-                self.options[key.strip()] = value
+                options[key.strip()] = value
             else:
-                self.non_option_lines.append(l)
+                non_option_lines.append(l)
+        return options, non_option_lines
 
     def get_slicer(self):
         """Name of the slicer used to generate the G-Code file"""

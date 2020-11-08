@@ -9,9 +9,10 @@ class CuraMarlinParser(BaseParser):
     DELIMITER = ":"
     SLICER = "Cura"
 
-    def detect(self, head, tail):
+    @classmethod
+    def _detect(cls, head, tail):
         """Slicer info is at end of head, so optimize for that"""
-        return super().detect(reversed(head))
+        return super()._detect(reversed(head))
 
     def get_flavor(self):
         return self.options.get("FLAVOR")
