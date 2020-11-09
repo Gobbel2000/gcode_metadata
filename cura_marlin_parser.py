@@ -17,18 +17,29 @@ class CuraMarlinParser(BaseParser):
     def get_flavor(self):
         return self.options.get("FLAVOR")
 
+    def get_extruder_count(self):
+        """
+        The number of extruders can be determined by the number of filament figures.
+        """
+        filament = self.options.get("Filament used")
+        if filament is None:
+            return None
+        return filament.count(",")
+
     def get_time(self):
         return self.options.get("TIME")
 
-    def get_diameter(self):
+    def get_diameter(self, extruder=0):
         """Cura normally uses 2.85 instead of 1.75"""
         return 2.85
 
-    def get_filament(self):
+    def get_filament(self, extruder=None):
         fil = self.options.get("Filament used")
         if fil is None:
             return None
         filament_per_extruder = fil.split(",", 1)
+        if extruder is not None:
+            filament_per_extruder = filament_per_extruder[extruder:extruder+1]
         if "volumetric" in self.get_flavor().lower():
             # Strip whitespaces and mm3
             volume = sum(iter(float(f.strip()[:-3])

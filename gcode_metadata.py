@@ -49,7 +49,10 @@ class GCodeMetadata:
         """
         if not hasattr(gcode_file, "read"):
             # Path is given, open stream
-            gcode_file = open(gcode_file, "rb")
+            path = gcode_file
+            gcode_file = open(path, "rb")
+        else:
+            path = None
         head, tail = self.filter_metadata_lines(gcode_file)
         gcode_file.close()
         parser = None
@@ -59,47 +62,7 @@ class GCodeMetadata:
                 break
         if parser is None:
             raise ValueError(f"Couldn't find matching parser for {path}")
-        return parser(head, tail)
-
-    """
-    def _parse_ufp(self, path):
-        Extract thumbnail and material file from the UFP and return file
-        pointer to the gcode file.
-        return
-        with ZipFile(path, "r") as zip_obj:
-            thumbnail_dir = os.path.dirname(path) + "/.thumbnails/"
-            if not os.path.exists(thumbnail_dir):
-                os.mkdir(thumbnail_dir)
-            thumbnail_path = thumbnail_dir + os.path.basename(path) + ".png"
-            with open(thumbnail_path, "wb") as thumbnail_target:
-                thumbnail_target.write(zip_obj.read("/Metadata/thumbnail.png"))
-
-            if self.filament_manager:
-                fm = self.filament_manager
-                # Find out if the material file with this guid already exists
-                material_paths = [p for p in zip_obj.namelist()
-                                  if p.startswith("/Materials/")]
-                guids = []
-                # If sliced for 2 extruders there can be 2 material files
-                for mp in material_paths:
-                    with zip_obj.open(mp) as material_fp:
-                        guid = fm.get_info(material_fp, "./m:metadata/m:GUID")
-                        material_fp.seek(0)
-                        if not (guid in fm.guid_to_path
-                            and fm.get_info(material_fp, "./m:metadata/m:version")
-                                == fm.get_info(guid, "./m:metadata/m:version")):
-                            # New material, needs to be extracted
-                            new_material_path = fm.material_dir + os.path.basename(mp)
-                            with open(new_material_path, "wb") as material_target:
-                                # This might overwrite the old file
-                                material_fp.seek(0)
-                                material_target.write(material_fp.read())
-                            fm.read_single_file(new_material_path)
-                    guids.append(guid)
-                self.extra_data["material_guids"] = guids
-            gcode_fp = zip_obj.open("/3D/model.gcode", "r")  # Persists after closing zip_obj
-        return gcode_fp
-    """
+        return parser(head, tail, path)
 
     def filter_metadata_lines(self, fp):
         """

@@ -11,9 +11,8 @@ class BaseParser:
     however all methods are optional to implement. If unchanged,
     a default value will be set, usually None.
 
-    This is only used as a temporary object, all values are stored
-    in a Metadata object which basically executes all get_* methods of
-    the parser class.
+    Some values are specific to one extruder. The extruder is specified as an
+    integer index, starting at zero.
     """
 
     """Used by detect() on all lines to figure out if this is the right parser"""
@@ -24,8 +23,9 @@ class BaseParser:
 
     """Name of the slicer used to generate the G-Code file"""
     SLICER = "Unknown"
-    
-    def __init__(self, head, tail):
+
+    def __init__(self, head, tail, path=None):
+        self.path = path
         self.options, self.non_option_lines = self._parse_options(head, tail)
 
     @classmethod
@@ -39,7 +39,7 @@ class BaseParser:
             if re.search(cls.PATTERN_DETECT, l):
                 return True
         return False
-    
+
     def _parse_options(self, head=[], tail=[]):
         options = {}
         non_option_lines = []
@@ -56,18 +56,29 @@ class BaseParser:
                 non_option_lines.append(l)
         return options, non_option_lines
 
+    def get_gcode_stream(self):
+        """Return a file object containing the G-Code data"""
+        if not self.path:
+            raise ValueError("Can't open gcode file: no path available")
+        return open(self.path, "rb")
+
     def get_slicer(self):
         """Name of the slicer used to generate the G-Code file"""
         return self.SLICER
-    
+
+    def get_extruder_count(self):
+        """Return the number of extruders the file was spliced for"""
+        return 1
+
     def get_time(self):
         """Total print time in seconds"""
         return None
 
-    def get_filament(self):
+    def get_filament(self, extruder=None):
         """
-        Return the total amount of filament used, all extruders summed up.
-        Should return None or a dictionary containing the values
+        Return the amount of filament used for the given extruder index
+        (starting at 0). If extruder is None, the sum of all extruders is
+        returned.  Should return a dictionary containing the values
         "length" in mm, "volume" in mm^3 and "weight" in g.
         self.convert_filament() will help with this.
         """
@@ -78,6 +89,10 @@ class BaseParser:
         Given at least one measurement of length, volume or weight,
         return all other measurements, provided that get_diameter()
         and get_density() are implemented.
+        Units:
+        Length    mm
+        Volume    mm^3
+        Weight    g
         """
         diameter = self.get_diameter()
         if diameter is not None:
@@ -105,11 +120,11 @@ class BaseParser:
                 length = volume / area
         return {"length": length, "volume": volume, "weight": weight}
 
-    def get_density(self):
+    def get_density(self, extruder=0):
         """Material density in g/cm^3"""
         return 1.24
 
-    def get_diameter(self):
+    def get_diameter(self, extruder=0):
         """Filament diameter in mm"""
         return 1.75
 
