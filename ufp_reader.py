@@ -23,6 +23,7 @@ class UFPReader:
         self._gcode_parser = module._parse_gcode(self.get_gcode_stream())
 
         self.thumbnail_path = None
+        self._material_guids = []
         self._relationships = self._get_relationships()
         self._extract_thumbnail()
         self._extract_materials()
@@ -41,8 +42,8 @@ class UFPReader:
             return []
         with self._zip_obj.open(self._gcode_relationship_path) as rel_fp:
             root = ET.parse(rel_fp).getroot()
-        ns = {"": "http://schemas.openxmlformats.org/package/2006/relationships"}
-        relationships = [e.attrib for e in root.findall("Relationship", ns)]
+        ns = {"r": "http://schemas.openxmlformats.org/package/2006/relationships"}
+        relationships = [e.attrib for e in root.findall("r:Relationship", ns)]
         # Make sure the list is sorted right
         relationships.sort(key = lambda e: e.get("Id"))
         return relationships
@@ -68,7 +69,7 @@ class UFPReader:
         """
         fm = self._module.filament_manager
         if fm is None:
-            return None
+            return
         material_paths = [e["Target"] for e in self._relationships
                           if e["Type"] == self._material_relationship_type]
         for material in material_paths:
@@ -85,30 +86,41 @@ class UFPReader:
                     fp.write(material_file.read())
                 fm.read_single_file(new_material_path)
             material_file.close()
+            self._material_guids.append(guid)
 
-    def _get_material_file(self, extruder=0):
-        material_paths = [e["Target"] for e in self._relationships
-                          if e["Type"] == self._material_relationship_type]
-        if not material_paths:
+    def get_filetype(self):
+        return "ufp"
+
+    def get_material_guid(self, extruder=0):
+        if not self._material_guids:
             return None
         # If multiple extruders use the same material there are less materials than extruders
-        extruder = min(extruder, len(material_paths) - 1)
-        virtual_path = material_paths[extruder]
-        return self._zip_obj.open(virtual_path)
+        extruder = min(extruder, len(self._material_guids) - 1)
+        guid = self._material_guids[extruder]
+        return guid
 
-    def _get_material_info(self, xpath, extruder=0):
+    def get_material_info(self, xpath, extruder=0):
         fm = self._module.filament_manager
-        material_file = self._get_material_file(extruder)
-        if fm is None or material_file is None:
+        guid = self.get_material_guid(extruder)
+        if fm is None or guid is None:
             return None
-        return fm.get_info(material_file, xpath)
+        return fm.get_info(guid, xpath)
+
+    def get_material_type(self, extruder=0):
+        return self.get_material_info("./m:metadata/m:name/m:material", extruder)
+
+    def get_material_brand(self, extruder=0):
+        return self.get_material_info("./m:metadata/m:name/m:brand", extruder)
+
+    def get_material_color(self, extruder=0):
+        return self.get_material_info("./m:metadata/m:color_code", extruder)
 
     def get_density(self, extruder=0):
-        return (self._get_material_info("./m:properties/m:density", extruder)
+        return (self.get_material_info("./m:properties/m:density", extruder)
                 or self._gcode_parser.get_density(extruder))
 
     def get_diameter(self, extruder=0):
-        return (self._get_material_info("./m:properties/m:diameter", extruder)
+        return (self.get_material_info("./m:properties/m:diameter", extruder)
                 or self._gcode_parser.get_density(extruder))
 
     def __getattr__(self, name):

@@ -24,7 +24,15 @@ class CuraMarlinParser(BaseParser):
         filament = self.options.get("Filament used")
         if filament is None:
             return None
-        return filament.count(",")
+        return filament.count(",") + 1
+
+    def get_print_dimensions(self):
+        return {"MinX": self.options.get("MINX"),
+                "MinY": self.options.get("MINY"),
+                "MinZ": self.options.get("MINZ"),
+                "MaxX": self.options.get("MAXX"),
+                "MaxY": self.options.get("MAXY"),
+                "MaxZ": self.options.get("MAXZ")}
 
     def get_time(self):
         return self.options.get("TIME")

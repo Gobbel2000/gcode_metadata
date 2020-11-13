@@ -7,19 +7,24 @@ from ufp_reader import UFPReader
 from cura_marlin_parser import CuraMarlinParser
 from prusaslicer_parser import PrusaSlicerParser
 
-PARSERS = [CuraMarlinParser,
-           PrusaSlicerParser,
-]
-
 class GCodeMetadata:
 
+    _parsers = [CuraMarlinParser,
+                PrusaSlicerParser,
+    ]
+
     def __init__(self, config=None):
+        self.filament_manager = None
         if config is None:
+            import site
+            site.addsitedir(os.path.dirname(os.path.dirname(
+                            os.path.realpath(__file__))))
+            import filament_manager
+            self.filament_manager = filament_manager.load_config(None)
             return
         self.config = config
         self.printer = config.get_printer()
         self.printer.register_event_handler("klippy:connect", self._handle_connect)
-        self.filament_manager = None
 
     def _handle_connect(self):
         self.filament_manager = self.printer.lookup_object(
@@ -56,7 +61,7 @@ class GCodeMetadata:
         head, tail = self.filter_metadata_lines(gcode_file)
         gcode_file.close()
         parser = None
-        for p in PARSERS:
+        for p in self._parsers:
             if p._detect(head, tail):
                 parser = p
                 break
@@ -127,7 +132,13 @@ def load_config(config):
 
 if __name__ == "__main__":
     import sys
+    if len(sys.argv) < 2:
+        sys.exit("A path to parse must be provided")
     path = sys.argv[1]
     mm = GCodeMetadata()
     md = mm.get_metadata(path)
     print(md.get_time(), md.get_filament())
+    print(md.get_extruder_count())
+    for i in range(md.get_extruder_count()):
+        print(md.get_material_guid(i))
+        print(md.get_material_color(i))

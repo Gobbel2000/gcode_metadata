@@ -10,19 +10,19 @@ class PrusaSlicerParser(BaseParser):
     def get_flavor(self):
         return self.options.get("gcode_flavor")
 
-    def get_diameter(self):
+    def get_diameter(self, extruder=0):
         diameter = self.options.get("filament_diameter")
         if not diameter: # Includes case that diameter is 0
             return super().get_diameter()
         return diameter
 
-    def get_density(self):
+    def get_density(self, extruder=0):
         density = self.options.get("filament_density")
         if not density:
             return super().get_density()
         return density
 
-    def get_filament(self):
+    def get_filament(self, extruder=None):
         length = self.options.get("filament used [mm]")
         return self.convert_filament(length=length)
 

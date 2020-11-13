@@ -66,9 +66,21 @@ class BaseParser:
         """Name of the slicer used to generate the G-Code file"""
         return self.SLICER
 
+    def get_filetype(self):
+        return "gcode"
+
     def get_extruder_count(self):
         """Return the number of extruders the file was spliced for"""
         return 1
+
+    def get_print_dimensions(self):
+        """
+        The dimensions of the object to print, all figures are in mm.
+        Should be a dictionary including the keys:
+        MinX, MinY, MinZ, MaxX, MaxY, MaxZ.
+        """
+        return {"MinX": None, "MinY": None, "MinZ": None,
+                "MaxX": None, "MaxY": None, "MaxZ": None}
 
     def get_time(self):
         """Total print time in seconds"""
@@ -89,6 +101,7 @@ class BaseParser:
         Given at least one measurement of length, volume or weight,
         return all other measurements, provided that get_diameter()
         and get_density() are implemented.
+
         Units:
         Length    mm
         Volume    mm^3
@@ -119,6 +132,31 @@ class BaseParser:
             if not length and area:
                 length = volume / area
         return {"length": length, "volume": volume, "weight": weight}
+
+    def get_material_guid(self, extruder=0):
+        """
+        The GUID of the material file, as recognized by filament_manager.
+        This is probably only relevant for Cura files.
+        """
+        return None
+
+    def get_material_type(self, extruder=0):
+        """
+        The material type the filament is made of
+        """
+        return None
+
+    def get_material_brand(self, extruder=0):
+        """
+        The manufacturer name of the filament
+        """
+        return None
+
+    def get_material_color(self, extruder=0):
+        """
+        The color code of the filament in hexadecimal RGB format, e.g: "#bb1e10"
+        """
+        return None
 
     def get_density(self, extruder=0):
         """Material density in g/cm^3"""
