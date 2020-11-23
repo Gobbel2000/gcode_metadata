@@ -58,3 +58,15 @@ class CuraMarlinParser(BaseParser):
                                 for f in filament_per_extruder))
             length = length_m * 1000  # Convert to mm
             return self.convert_filament(length=length)
+
+    PATTERN_ELAPSED_TIME = re.compile(r";?TIME_ELAPSED\s*:\s*(?P<seconds>\d*\.?\d*)")
+
+    def parse_elapsed_time(self, line):
+        match = re.match(self.PATTERN_ELAPSED_TIME, line)
+        if match:
+            elapsed_time = match.group("seconds")
+            try:
+                elapsed_time = float(elapsed_time)
+            except ValueError:
+                return None
+            return elapsed_time

@@ -7,11 +7,11 @@ object.
 ### Supported splicers:
 
 * Cura - Marlin flavor (and Marlin Volumetric)
+* Prusa Slicer
 
 ### Support planned:
 
 * Cura - Griffin flavor
-* Prusa Slicer
 * Slic3r
 * Kisslicer
 * Kisslicer2

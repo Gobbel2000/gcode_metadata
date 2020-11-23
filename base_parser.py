@@ -169,3 +169,10 @@ class BaseParser:
     def get_flavor(self):
         """The G-Code flavor used"""
         return None
+
+    def parse_elapsed_time(self, line):
+        """
+        Return the printing time in seconds up to this line as predicted
+        by the slicer. Requires the comment line describing the estimate.
+        """
+        return None
