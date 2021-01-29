@@ -22,9 +22,9 @@ class PrusaSlicerParser(BaseParser):
             return super().get_density()
         return density
 
-    def get_filament(self, extruder=None):
+    def get_filament(self, extruder=None, measure=None):
         length = self.options.get("filament used [mm]")
-        return self.convert_filament(length=length)
+        return self.convert_filament(length=length, measure=measure)
 
     pattern_time = re.compile(r"((?P<days>\d+)d\s*)?" +
                               r"((?P<hours>\d+)h\s*)?" +

@@ -1,10 +1,10 @@
 import itertools
 from math import pi
+import os
 import re
 
 class BaseParser:
-    """
-    Base class for all parsers.
+    """Base class for all parsers
 
     A parser for a specific slicer should inherit this class.
     For adding metadata the appropriate methods should be overridden,
@@ -62,6 +62,12 @@ class BaseParser:
             raise ValueError("Can't open gcode file: no path available")
         return open(self.path, "rb")
 
+    def get_file_size(self):
+        """The size of the gcode file in bytes"""
+        if not self.path:
+            raise ValueError("Can't stat gcode file: no path available")
+        return os.path.getsize(self.path)
+
     def get_slicer(self):
         """Name of the slicer used to generate the G-Code file"""
         return self.SLICER
@@ -86,21 +92,26 @@ class BaseParser:
         """Total print time in seconds"""
         return None
 
-    def get_filament(self, extruder=None):
+    def get_filament(self, extruder=None, measure=None):
         """
         Return the amount of filament used for the given extruder index
         (starting at 0). If extruder is None, the sum of all extruders is
-        returned.  Should return a dictionary containing the values
+        returned. The measure used is one of
         "length" in mm, "volume" in mm^3 and "weight" in g.
+        measure selects which one to return. If not specified,
+        a dictionary containing all values is returned.
+
         self.convert_filament() will help with this.
         """
-        return self.convert_filament()
+        return self.convert_filament(measure=measure)
 
-    def convert_filament(self, length=None, volume=None, weight=None):
+    def convert_filament(self, length=None, volume=None, weight=None, measure=None):
         """
         Given at least one measurement of length, volume or weight,
         return all other measurements, provided that get_diameter()
         and get_density() are implemented.
+        measure can be specified to only return one value. By default
+        all values are returned in a dictionary.
 
         Units:
         Length    mm
@@ -116,22 +127,29 @@ class BaseParser:
         if density is not None:
             density /= 1000  # g/mm^3
 
-        if length:
-            if not volume and area:
-                volume = length * area
-            if not weight and density:
-                weight = volume * density
-        elif volume:
+        if volume:
             if not weight and density:
                 weight = volume * density
             if not length and area:
                 length = volume / area
+        elif length:
+            if not volume and area:
+                volume = length * area
+            if not weight and density:
+                weight = volume * density
         elif weight:
             if not volume and density:
                 volume = weight / density
             if not length and area:
                 length = volume / area
-        return {"length": length, "volume": volume, "weight": weight}
+        if measure == "length":
+            return length
+        elif measure == "volume":
+            return volume
+        elif measure == "weight":
+            return weight
+        else:
+            return {"length": length, "volume": volume, "weight": weight}
 
     def get_material_guid(self, extruder=0):
         """

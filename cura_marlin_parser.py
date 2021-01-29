@@ -42,7 +42,7 @@ class CuraMarlinParser(BaseParser):
         """Cura normally uses 2.85 instead of 1.75"""
         return 2.85
 
-    def get_filament(self, extruder=None):
+    def get_filament(self, extruder=None, measure=None):
         fil = self.options.get("Filament used")
         if fil is None:
             return None
@@ -53,12 +53,12 @@ class CuraMarlinParser(BaseParser):
             # Strip whitespaces and mm3
             volume = sum(iter(float(f.strip()[:-3])
                               for f in filament_per_extruder))
-            return self.convert_filament(volume=volume)
+            return self.convert_filament(volume=volume, measure=measure)
         else:
             length_m = sum(iter(float(f.strip(" m"))
                                 for f in filament_per_extruder))
             length = length_m * 1000  # Convert to mm
-            return self.convert_filament(length=length)
+            return self.convert_filament(length=length, measure=measure)
 
     PATTERN_ELAPSED_TIME = re.compile(
             r";?TIME_ELAPSED\s*:\s*(?P<seconds>\d*\.?\d*)")

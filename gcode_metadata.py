@@ -36,7 +36,8 @@ class GCodeMetadata:
 
     def delete_cache_entry(self, path):
         """Delete a single metadata object from the cache"""
-        del self._md_cache[path]
+        if path in self._md_cache:
+            del self._md_cache[path]
 
     def flush_cache(self):
         """
@@ -159,6 +160,7 @@ if __name__ == "__main__":
     md = mm.get_metadata(path)
     general_interface = [
         "get_gcode_stream",
+        "get_file_size",
         "get_slicer",
         "get_filetype",
         "get_extruder_count",

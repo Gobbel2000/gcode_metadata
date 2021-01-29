@@ -16,6 +16,9 @@ class UFPReader:
     _material_relationship_type = "http://schemas.ultimaker.org/package/2018/relationships/material"
 
     def __init__(self, path, module):
+        # This line is important, otherwise __getattr__ could recurse indefinitely
+        self._gcode_parser = None
+
         self.path = path
         self._module = module
         self._zip_obj = ZipFile(path)
@@ -33,6 +36,11 @@ class UFPReader:
             raise FileNotFoundError("Can't locate .gcode file in UFP package")
         return self._zip_obj.open(self._gcode_path)
 
+    def get_file_size(self):
+        if self._gcode_path not in self._zip_obj.namelist():
+            raise FileNotFoundError("Can't locate .gcode file in UFP package")
+        return self._zip_obj.getinfo(self._gcode_path).file_size
+
     def _get_relationships(self):
         """
         Return the file relationships from the gcode file in the UFP package.
@@ -49,7 +57,7 @@ class UFPReader:
         return relationships
 
     def _extract_thumbnail(self):
-        """Write the thumbnail into the .thumbnail directory"""
+        """Write the thumbnail into the .thumbnails directory"""
         virtual_path = next(iter(e["Target"] for e in self._relationships
                 if e["Type"] == self._thumbnail_relationship_type), None)
         if virtual_path is None:
