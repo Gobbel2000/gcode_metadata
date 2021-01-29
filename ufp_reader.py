@@ -51,7 +51,7 @@ class UFPReader:
     def _extract_thumbnail(self):
         """Write the thumbnail into the .thumbnail directory"""
         virtual_path = next(iter(e["Target"] for e in self._relationships
-                            if e["Type"] == self._thumbnail_relationship_type), None)
+                if e["Type"] == self._thumbnail_relationship_type), None)
         if virtual_path is None:
             return
         thumbnail_dir = os.path.dirname(self.path) + "/.thumbnails/"
@@ -94,7 +94,8 @@ class UFPReader:
     def get_material_guid(self, extruder=0):
         if not self._material_guids:
             return None
-        # If multiple extruders use the same material there are less materials than extruders
+        # If multiple extruders use the same material there are less
+        # materials than extruders
         extruder = min(extruder, len(self._material_guids) - 1)
         guid = self._material_guids[extruder]
         return guid
@@ -122,6 +123,9 @@ class UFPReader:
     def get_diameter(self, extruder=0):
         return (self.get_material_info("./m:properties/m:diameter", extruder)
                 or self._gcode_parser.get_density(extruder))
+
+    def get_thumbnail_path(self):
+        return self.thumbnail_path
 
     def __getattr__(self, name):
         """

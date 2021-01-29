@@ -170,6 +170,10 @@ class BaseParser:
         """The G-Code flavor used"""
         return None
 
+    def get_thumbnail_path(self):
+        """Full path to a thumbnail image of the object"""
+        return None
+
     def parse_elapsed_time(self, line):
         """
         Return the printing time in seconds up to this line as predicted

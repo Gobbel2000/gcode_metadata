@@ -19,7 +19,8 @@ class CuraMarlinParser(BaseParser):
 
     def get_extruder_count(self):
         """
-        The number of extruders can be determined by the number of filament figures.
+        The number of extruders can be determined by the number of
+        filament figures.
         """
         filament = self.options.get("Filament used")
         if filament is None:
@@ -59,7 +60,8 @@ class CuraMarlinParser(BaseParser):
             length = length_m * 1000  # Convert to mm
             return self.convert_filament(length=length)
 
-    PATTERN_ELAPSED_TIME = re.compile(r";?TIME_ELAPSED\s*:\s*(?P<seconds>\d*\.?\d*)")
+    PATTERN_ELAPSED_TIME = re.compile(
+            r";?TIME_ELAPSED\s*:\s*(?P<seconds>\d*\.?\d*)")
 
     def parse_elapsed_time(self, line):
         match = re.match(self.PATTERN_ELAPSED_TIME, line)

@@ -14,6 +14,9 @@ class GCodeMetadata:
     ]
 
     def __init__(self, config=None):
+        # Map paths to metadata objects to cache already parsed files
+        self._md_cache = {}
+
         self.filament_manager = None
         if config is None:
             import site
@@ -24,24 +27,41 @@ class GCodeMetadata:
             return
         self.config = config
         self.printer = config.get_printer()
-        self.printer.register_event_handler("klippy:connect", self._handle_connect)
+        self.printer.register_event_handler(
+                "klippy:connect", self._handle_connect)
 
     def _handle_connect(self):
         self.filament_manager = self.printer.lookup_object(
                 "filament_manager", None)
+
+    def delete_cache_entry(self, path):
+        """Delete a single metadata object from the cache"""
+        del self._md_cache[path]
+
+    def flush_cache(self):
+        """
+        Delete all cached metadata objects, forcing all files to be
+        reparsed in the future.
+        """
+        self._md_cache = {}
 
     def get_metadata(self, path):
         """
         This is the main method of the module that returns a metadata
         object for the given gcode path. UFP files are also accepted.
         """
+        if path in self._md_cache:
+            return self._md_cache[path]
+
         ext = os.path.splitext(path)[1]
         if ext in {".gco", ".gcode"}:
-            return self._parse_gcode(path)
+            metadata = self._parse_gcode(path)
         elif ext == ".ufp":
-            return UFPReader(path, self)
+            metadata = UFPReader(path, self)
         else:
             raise ValueError(f"File must be either gcode or ufp file, not {ext}")
+        self._md_cache[path] = metadata
+        return metadata
 
     def _parse_gcode(self, gcode_file):
         """
@@ -137,8 +157,31 @@ if __name__ == "__main__":
     path = sys.argv[1]
     mm = GCodeMetadata()
     md = mm.get_metadata(path)
-    print(md.get_time(), md.get_filament())
-    print(md.get_extruder_count())
+    general_interface = [
+        "get_gcode_stream",
+        "get_slicer",
+        "get_filetype",
+        "get_extruder_count",
+        "get_print_dimensions",
+        "get_time",
+        "get_flavor",
+        "get_thumbnail_path",
+        ]
+    extruder_interface = [
+        "get_filament",
+        "get_material_guid",
+        "get_material_type",
+        "get_material_brand",
+        "get_material_color",
+        "get_density",
+        "get_diameter",
+        ]
+    max_len = max([len(e) for e in general_interface + extruder_interface])
+    for fname in general_interface:
+        print(fname[4:] + ":" + " " * (max_len - len(fname) + 1)
+              + str(getattr(md, fname)()))
     for i in range(md.get_extruder_count()):
-        print(md.get_material_guid(i))
-        print(md.get_material_color(i))
+        print(f"\nExtruder {i}:")
+        for fname in extruder_interface:
+            print(fname[4:] + ":" + " " * (max_len - len(fname) + 1)
+                  + str(getattr(md, fname)()))
