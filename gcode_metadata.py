@@ -4,6 +4,7 @@ import os
 
 from ufp_reader import UFPReader
 
+from base_parser import BaseParser
 from cura_marlin_parser import CuraMarlinParser
 from prusaslicer_parser import PrusaSlicerParser
 
@@ -86,8 +87,8 @@ class GCodeMetadata:
             if p._detect(head, tail):
                 parser = p
                 break
-        if parser is None:
-            raise ValueError(f"Couldn't find matching parser for {path}")
+        if parser is None:  # Use BaseParser as fallback
+            parser = BaseParser
         return parser(head, tail, path)
 
     def filter_metadata_lines(self, fp):

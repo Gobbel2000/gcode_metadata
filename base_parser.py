@@ -13,6 +13,8 @@ class BaseParser:
 
     Some values are specific to one extruder. The extruder is specified as an
     integer index, starting at zero.
+
+    This class is used as fallback if no other matching parser was found.
     """
 
     """Used by detect() on all lines to figure out if this is the right parser"""
@@ -142,6 +144,7 @@ class BaseParser:
                 volume = weight / density
             if not length and area:
                 length = volume / area
+
         if measure == "length":
             return length
         elif measure == "volume":

@@ -88,9 +88,9 @@ class UFPReader:
             if not (guid in fm.guid_to_path and
                     version == fm.get_info(guid, "./m:metadata/m:version")):
                 # New material, needs to be extracted
-                new_material_path = fm.material_dir + os.path.basename(material)
+                new_material_path = os.path.join(fm.material_dir, os.path.basename(material))
+                material_file.seek(0)
                 with open(new_material_path, "wb") as fp:
-                    material_file.seek(0)
                     fp.write(material_file.read())
                 fm.read_single_file(new_material_path)
             material_file.close()
