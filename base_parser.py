@@ -144,7 +144,6 @@ class BaseParser:
                 volume = weight / density
             if not length and area:
                 length = volume / area
-
         if measure == "length":
             return length
         elif measure == "volume":

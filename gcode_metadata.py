@@ -2,11 +2,11 @@
 
 import os
 
-from ufp_reader import UFPReader
+from .ufp_reader import UFPReader
 
-from base_parser import BaseParser
-from cura_marlin_parser import CuraMarlinParser
-from prusaslicer_parser import PrusaSlicerParser
+from .base_parser import BaseParser
+from .cura_marlin_parser import CuraMarlinParser
+from .prusaslicer_parser import PrusaSlicerParser
 
 class GCodeMetadata:
 

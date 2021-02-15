@@ -1,5 +1,6 @@
 import re
-from base_parser import BaseParser
+
+from .base_parser import BaseParser
 
 class PrusaSlicerParser(BaseParser):
 
