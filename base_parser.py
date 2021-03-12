@@ -31,13 +31,13 @@ class BaseParser:
         self.options, self.non_option_lines = self._parse_options(head, tail)
 
     @classmethod
-    def _detect(cls, head=[], tail=[]):
+    def _detect(cls, lines):
         """
         return True if this is the right parser for this file.
         This is implemented as a class method so the class doesn't have
         to be instantiated to detect if it's the right parser.
         """
-        for l in itertools.chain(head, tail):
+        for l in lines:
             if re.search(cls.PATTERN_DETECT, l):
                 return True
         return False

@@ -2,28 +2,62 @@ import os
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
-class UFPReader:
+_GCODE_PATH = "/3D/model.gcode"
+
+def create_ufp_reader(path, module):
+    """
+    Find the right parser class and add it as a baseclass to _UFPReader.
+    An instance of this new class is returned that follows the BaseParser API.
+    """
+    zip_obj = ZipFile(path)
+    if _GCODE_PATH not in zip_obj.namelist():
+        raise FileNotFoundError("Can't locate .gcode file in UFP package")
+    fp = zip_obj.open(_GCODE_PATH)
+    head = module._get_head_md(fp)
+    tail = module._get_tail_md(fp)
+    ParserClass = module._find_parser(head + tail)
+
+    UFPParserClass = _UFPReader.add_baseclass(ParserClass)
+    ufp_parser = UFPParserClass(path, module, zip_obj, head, tail)
+    return ufp_parser
+
+
+class _UFPMetaClass(type):
+    """
+    Add the ability to dynamically add different base classes to a class.
+    """
+    def __init__(self, clsname, bases, attrs):
+        # Save class attributes and bases so we can create new ones in the future
+        self._attrs = attrs
+        self._bases = bases
+
+    def add_baseclass(self, base):
+        return super().__new__(__class__, "UFP" + base.__name__, (*self._bases, base), self._attrs)
+
+
+class _UFPReader(metaclass=_UFPMetaClass):
     """
     This class acts as an additional level ontop of the Parser base class
     that takes care of opening the UFP file and adds additional functionality
     unique to that format.
+
+    THIS CLASS CANNOT BE USED ON ITS OWN.
+    A baseclass must be added that inherits BaseParser (or BaseParser) using
+    _UFPReader.add_baseclass(BASE)
+    This class-level function add_baseclass is added by the metaclass _UFPMetaClass.
     """
 
-    _gcode_path = "/3D/model.gcode"
+    _gcode_path = _GCODE_PATH
     _gcode_relationship_path = "/3D/_rels/model.gcode.rels"
 
     _thumbnail_relationship_type = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
     _material_relationship_type = "http://schemas.ultimaker.org/package/2018/relationships/material"
 
-    def __init__(self, path, module):
-        # This line is important, otherwise __getattr__ could recurse indefinitely
-        self._gcode_parser = None
-
+    def __init__(self, path, module, zip_obj, head, tail):
+        super().__init__(head, tail, path)
         self.path = path
         self._module = module
-        self._zip_obj = ZipFile(path)
-
-        self._gcode_parser = module._parse_gcode(self.get_gcode_stream())
+        self._zip_obj = zip_obj
 
         self.thumbnail_path = None
         self._material_guids = []
@@ -125,23 +159,23 @@ class UFPReader:
         return self.get_material_info("./m:metadata/m:color_code", extruder)
 
     def get_density(self, extruder=0):
-        return (self.get_material_info("./m:properties/m:density", extruder)
-                or self._gcode_parser.get_density(extruder))
+        density = self.get_material_info("./m:properties/m:density", extruder)
+        try:
+            density = float(density)
+        except (ValueError, TypeError):
+            return super().get_density(extruder)
+        return density
 
     def get_diameter(self, extruder=0):
-        return (self.get_material_info("./m:properties/m:diameter", extruder)
-                or self._gcode_parser.get_density(extruder))
+        diameter = self.get_material_info("./m:properties/m:diameter", extruder)
+        try:
+            diameter = float(diameter)
+        except (ValueError, TypeError):
+            return super().get_diameter(extruder)
+        return diameter
 
     def get_thumbnail_path(self):
         return self.thumbnail_path
-
-    def __getattr__(self, name):
-        """
-        This function gets called only when a request couldn't be answered,
-        i.e. an AttributeError was raised. We route over to the gcode parser,
-        effectively extending this class by the gcode parser.
-        """
-        return getattr(self._gcode_parser, name)
 
     def __del__(self):
         self._zip_obj.close()

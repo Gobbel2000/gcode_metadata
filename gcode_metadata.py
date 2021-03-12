@@ -2,7 +2,7 @@
 
 import os
 
-from .ufp_reader import UFPReader
+from .ufp_reader import create_ufp_reader
 
 from .base_parser import BaseParser
 from .cura_marlin_parser import CuraMarlinParser
@@ -59,13 +59,13 @@ class GCodeMetadata:
         if ext in {".gco", ".gcode"}:
             metadata = self._parse_gcode(path)
         elif ext == ".ufp":
-            metadata = UFPReader(path, self)
+            metadata = create_ufp_reader(path, self)
         else:
             raise ValueError(f"File must be either gcode or ufp file, not {ext}")
         self._md_cache[path] = metadata
         return metadata
 
-    def _parse_gcode(self, gcode_file):
+    def _parse_gcode(self, path):
         """
         Parse the Metadata for the G-Code and return an object describing
         the file.
@@ -74,33 +74,33 @@ class GCodeMetadata:
         file pointer. If a stream is provided, be aware that it gets closed
         in this function.
         """
-        if not hasattr(gcode_file, "read"):
-            # Path is given, open stream
-            path = gcode_file
-            gcode_file = open(path, "rb")
-        else:
-            path = None
-        head, tail = self.filter_metadata_lines(gcode_file)
+        gcode_file = open(path, "rb")
+        head = self._get_head_md(gcode_file)
+        tail = self._get_tail_md(gcode_file)
         gcode_file.close()
-        parser = None
-        for p in self._parsers:
-            if p._detect(head, tail):
-                parser = p
-                break
-        if parser is None:  # Use BaseParser as fallback
-            parser = BaseParser
-        return parser(head, tail, path)
+        ParserClass = self._find_parser(head + tail)
+        return ParserClass(head, tail, path)
 
-    def filter_metadata_lines(self, fp):
+    def _find_parser(self, lines):
+        """
+        Return the correct GCode Parser class detect from the given lines.
+        If no matching class is found, return BaseParser.
+        """
+        for p in self._parsers:
+            if p._detect(lines):
+                return p
+        # Use BaseParser as fallback
+        return BaseParser
+
+    def _get_head_md(self, fp):
         """
         Retreave the relevant metadata lines from the gcode file,
         which must be given as an open file stream.
 
         This includes all fully commented lines (starting with ';') up until
-        the first non-commented line, and the last lines accordingly.
+        the first non-commented line.
         The leading semicolon is stripped.
         """
-
         bufsize = 1024
         head = []
         last_line = b""
@@ -122,6 +122,13 @@ class GCodeMetadata:
                 else:
                     keep_reading = False
                     break
+        return head
+
+    def _get_tail_md(self, fp):
+        """
+        Like _get_head_md but read from EOF backwards.
+        """
+        bufsize = 1024
         tail = []
         blocks_offset = -1
         last_line = b""
@@ -146,7 +153,7 @@ class GCodeMetadata:
                     keep_reading = False
                     break
         tail.reverse()
-        return head, tail
+        return tail
 
 def load_config(config):
     module = GCodeMetadata(config)
