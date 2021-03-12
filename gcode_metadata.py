@@ -105,6 +105,7 @@ class GCodeMetadata:
         head = []
         last_line = b""
         keep_reading = True
+        fp.seek(0)
 
         while keep_reading:
             buf = fp.read(bufsize)

@@ -26,6 +26,11 @@ class BaseParser:
     """Name of the slicer used to generate the G-Code file"""
     SLICER = "Unknown"
 
+    """If part of the metadata is stored at the end of the file.
+    Only used when parsing UFP files because reading the tail requires
+    decompressing the entire file."""
+    _needs_tail = False
+
     def __init__(self, head, tail, path=None):
         self.path = path
         self.options, self.non_option_lines = self._parse_options(head, tail)

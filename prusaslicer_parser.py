@@ -8,6 +8,9 @@ class PrusaSlicerParser(BaseParser):
                                 flags=re.IGNORECASE)
     SLICER = "PrusaSlicer"
 
+    # Read the tail when in a UFP file
+    _needs_tail=True
+
     def get_flavor(self):
         return self.options.get("gcode_flavor")
 

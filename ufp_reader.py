@@ -2,6 +2,8 @@ import os
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
+from .base_parser import BaseParser
+
 _GCODE_PATH = "/3D/model.gcode"
 
 def create_ufp_reader(path, module):
@@ -14,8 +16,14 @@ def create_ufp_reader(path, module):
         raise FileNotFoundError("Can't locate .gcode file in UFP package")
     fp = zip_obj.open(_GCODE_PATH)
     head = module._get_head_md(fp)
-    tail = module._get_tail_md(fp)
-    ParserClass = module._find_parser(head + tail)
+    ParserClass = module._find_parser(head)
+    tail = []
+    # Only read the tail if needed, because the entire file needs to be decompressed for that
+    if ParserClass is BaseParser:  # Couldn't find a parser class
+        tail = module._get_tail_md(fp)
+        ParserClass = module._find_parser(tail)
+    elif ParserClass._needs_tail:  # Parser needs to read the tail
+        tail = module._get_tail_md(fp)
 
     UFPParserClass = _UFPReader.add_baseclass(ParserClass)
     ufp_parser = UFPParserClass(path, module, zip_obj, head, tail)
