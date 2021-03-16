@@ -38,10 +38,6 @@ class CuraMarlinParser(BaseParser):
     def get_time(self):
         return self.options.get("TIME")
 
-    def get_diameter(self, extruder=0):
-        """Cura normally uses 2.85 instead of 1.75"""
-        return 2.85
-
     def get_filament(self, extruder=None, measure=None):
         fil = self.options.get("Filament used")
         if fil is None:

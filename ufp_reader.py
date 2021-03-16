@@ -24,6 +24,7 @@ def create_ufp_reader(path, module):
         ParserClass = module._find_parser(tail)
     elif ParserClass._needs_tail:  # Parser needs to read the tail
         tail = module._get_tail_md(fp)
+    fp.close()
 
     UFPParserClass = _UFPReader.add_baseclass(ParserClass)
     ufp_parser = UFPParserClass(path, module, zip_obj, head, tail)
@@ -62,7 +63,7 @@ class _UFPReader(metaclass=_UFPMetaClass):
     _material_relationship_type = "http://schemas.ultimaker.org/package/2018/relationships/material"
 
     def __init__(self, path, module, zip_obj, head, tail):
-        super().__init__(head, tail, path)
+        super(self.__class__, self).__init__(head, tail, path, module)
         self.path = path
         self._module = module
         self._zip_obj = zip_obj

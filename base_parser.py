@@ -31,7 +31,8 @@ class BaseParser:
     decompressing the entire file."""
     _needs_tail = False
 
-    def __init__(self, head, tail, path=None):
+    def __init__(self, head, tail, path, module):
+        self._module = module
         self.path = path
         self.options, self.non_option_lines = self._parse_options(head, tail)
 
@@ -65,14 +66,10 @@ class BaseParser:
 
     def get_gcode_stream(self):
         """Return a file object containing the G-Code data"""
-        if not self.path:
-            raise ValueError("Can't open gcode file: no path available")
         return open(self.path, "rb")
 
     def get_file_size(self):
         """The size of the gcode file in bytes"""
-        if not self.path:
-            raise ValueError("Can't stat gcode file: no path available")
         return os.path.getsize(self.path)
 
     def get_slicer(self):
@@ -116,7 +113,9 @@ class BaseParser:
         """
         Given at least one measurement of length, volume or weight,
         return all other measurements, provided that get_diameter()
-        and get_density() are implemented.
+        and get_density() are implemented. The diameter set for this
+        printer is prioritized, even if it differs from the diameter
+        assumed by the slicer.
         measure can be specified to only return one value. By default
         all values are returned in a dictionary.
 
@@ -125,7 +124,8 @@ class BaseParser:
         Volume    mm^3
         Weight    g
         """
-        diameter = self.get_diameter()
+        # Use the actual diameter the printer wants, regardless of what it was sliced for
+        diameter = self._module.config_diameter or self.get_diameter()
         if diameter is not None:
             area = pi * (diameter/2)**2  # mm^2
         else:
@@ -188,7 +188,11 @@ class BaseParser:
         return 1.24
 
     def get_diameter(self, extruder=0):
-        """Filament diameter in mm"""
+        """
+        Filament diameter in mm according to the slicer.
+        For material conversion the actual diameter used by this printer
+        is used instead.
+        """
         return 1.75
 
     def get_flavor(self):

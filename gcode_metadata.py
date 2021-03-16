@@ -25,11 +25,14 @@ class GCodeMetadata:
                             os.path.realpath(__file__))))
             import filament_manager
             self.filament_manager = filament_manager.load_config(None)
+            self.config_diameter = None
             return
         self.config = config
         self.printer = config.get_printer()
         self.printer.register_event_handler(
                 "klippy:connect", self._handle_connect)
+        extruder_config = self.config.getsection("extruder")
+        self.config_diameter = extruder_config.getfloat("filament_diameter", None)
 
     def _handle_connect(self):
         self.filament_manager = self.printer.lookup_object(
@@ -79,7 +82,7 @@ class GCodeMetadata:
         tail = self._get_tail_md(gcode_file)
         gcode_file.close()
         ParserClass = self._find_parser(head + tail)
-        return ParserClass(head, tail, path)
+        return ParserClass(head, tail, path, self)
 
     def _find_parser(self, lines):
         """
