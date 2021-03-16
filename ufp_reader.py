@@ -171,7 +171,8 @@ class _UFPReader(metaclass=_UFPMetaClass):
         try:
             density = float(density)
         except (ValueError, TypeError):
-            return super().get_density(extruder)
+            # self.__class__ may be different to __class__ here
+            return super(self.__class__, self).get_density(extruder)
         return density
 
     def get_diameter(self, extruder=0):
@@ -179,7 +180,7 @@ class _UFPReader(metaclass=_UFPMetaClass):
         try:
             diameter = float(diameter)
         except (ValueError, TypeError):
-            return super().get_diameter(extruder)
+            return super(self.__class__, self).get_diameter(extruder)
         return diameter
 
     def get_thumbnail_path(self):
